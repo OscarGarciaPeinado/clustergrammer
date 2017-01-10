@@ -315,7 +315,7 @@ module.exports =
 
 	'use strict';
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	/* Utility functions
 	 * ----------------------------------------------------------------------- */
@@ -956,7 +956,7 @@ module.exports =
 	var calc_default_fs = __webpack_require__(35);
 
 	module.exports = function calc_viz_params(params) {
-	  var preserve_cats = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+	  var preserve_cats = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
 
 	  params.labels = ini_label_params(params);
@@ -1030,7 +1030,7 @@ module.exports =
 	var make_cat_params = __webpack_require__(18);
 
 	module.exports = function ini_viz_params(params) {
-	  var preserve_cats = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
+	  var preserve_cats = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
 
 	  var viz = {};
@@ -1133,7 +1133,7 @@ module.exports =
 	var calc_cat_params = __webpack_require__(22);
 
 	module.exports = function make_cat_params(params, viz) {
-	  var preserve_cats = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
+	  var preserve_cats = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
 
 	  viz = process_category_info(params, viz, preserve_cats);
@@ -1153,7 +1153,7 @@ module.exports =
 	var check_if_value_cats = __webpack_require__(21);
 
 	module.exports = function process_category_info(params, viz) {
-	  var preserve_cats = arguments.length <= 2 || arguments[2] === undefined ? true : arguments[2];
+	  var preserve_cats = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
 
 	  var super_string = ': ';
@@ -2258,7 +2258,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function grid_lines_viz(params) {
-	  var duration = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	  var duration = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
 
 	  var delay = 0;
@@ -2394,172 +2394,183 @@ module.exports =
 
 	module.exports = function make_simple_rows(params, ini_inp_row_data, tip, row_selection) {
 
-	  var inp_row_data = ini_inp_row_data.row_data;
+	    var inp_row_data = ini_inp_row_data.row_data;
 
-	  var keep_orig;
-	  if (_.has(params.network_data.links[0], 'value_orig')) {
-	    keep_orig = true;
-	  } else {
-	    keep_orig = false;
-	  }
-
-	  var row_values;
-	  if (keep_orig === false) {
-	    // value: remove zero values to make visualization faster
-	    row_values = _.filter(inp_row_data, function (num) {
-	      return num.value !== 0;
-	    });
-	  } else {
-	    row_values = inp_row_data;
-	  }
-
-	  // generate tiles in the current row
-	  var tile = d3.select(row_selection).selectAll('rect').data(row_values, function (d) {
-	    return d.col_name;
-	  }).enter().append('rect').attr('class', 'tile row_tile').attr('width', params.viz.rect_width).attr('height', params.viz.rect_height).style('fill', function (d) {
-	    // switch the color based on up/dn value
-	    var inst_fill;
-	    if (d.value_orig === 'NaN') {
-	      inst_fill = '#000000';
+	    var keep_orig;
+	    if (_.has(params.network_data.links[0], 'value_orig')) {
+	        keep_orig = true;
 	    } else {
-	      inst_fill = d.value > 0 ? params.matrix.tile_colors[0] : params.matrix.tile_colors[1];
+	        keep_orig = false;
 	    }
-	    return inst_fill;
-	  }).on('mouseover', function () {
-	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	      args[_key] = arguments[_key];
-	    }
-	    mouseover_tile(params, this, tip, args);
-	  }).on('mouseout', function () {
-	    mouseout_tile(params, this, tip);
-	  }).style('fill-opacity', function (d) {
-	    // calculate output opacity using the opacity scale
-	    var inst_opacity;
-	    if (d.value_orig === 'NaN') {
-	      // console.log('found NaN while making tiles');
-	      inst_opacity = 0.175;
+
+	    var row_values;
+	    if (keep_orig === false) {
+	        // value: remove zero values to make visualization faster
+	        row_values = _.filter(inp_row_data, function (num) {
+	            return num.value !== 0;
+	        });
 	    } else {
-	      inst_opacity = params.matrix.opacity_scale(Math.abs(d.value));
+	        row_values = inp_row_data;
 	    }
-	    return inst_opacity;
-	  }).attr('transform', function (d) {
-	    return fine_position_tile(params, d);
-	  });
 
-	  // // tile circles
-	  // /////////////////////////////
-	  // var tile = d3.select(row_selection)
-	  //   .selectAll('circle')
-	  //   .data(row_values, function(d){ return d.col_name; })
-	  //   .enter()
-	  //   .append('circle')
-	  //   .attr('cx', params.viz.rect_height/4)
-	  //   .attr('cy', params.viz.rect_height/4)
-	  //   .attr('r', params.viz.rect_height/4)
-	  //   .attr('class', 'tile_circle')
-	  //   // .attr('width', params.viz.rect_width/2)
-	  //   // .attr('height', params.viz.rect_height/2)
-	  //   // // switch the color based on up/dn value
-	  //   // .style('fill', function(d) {
-	  //   //   // return d.value > 0 ? params.matrix.tile_colors[0] : params.matrix.tile_colors[1];
-	  //   //   return 'black';
-	  //   // })
-	  //   // .on('mouseover', function(...args) {
-	  //   //     mouseover_tile(params, this, tip, args);
-	  //   // })
-	  //   // .on('mouseout', function() {
-	  //   //   mouseout_tile(params, this, tip);
-	  //   // })
-	  //   .style('fill-opacity', function(d) {
-	  //     // calculate output opacity using the opacity scale
-	  //     var output_opacity = params.matrix.opacity_scale(Math.abs(d.value));
-	  //     if (output_opacity < 0.3){
-	  //       output_opacity = 0;
-	  //     } else if (output_opacity < 0.6){
-	  //       output_opacity = 0.35;
-	  //     } else {
-	  //       output_opacity = 1;
-	  //     }
-	  //     return output_opacity;
-	  //     // return 0.1;
-	  //   })
-	  //   .attr('transform', function(d) {
-	  //     return fine_position_tile(params, d);
-	  //   });
-
-
-	  if (params.matrix.tile_type == 'updn') {
-
-	    // value split
-	    var row_split_data = _.filter(inp_row_data, function (num) {
-	      return num.value_up != 0 || num.value_dn != 0;
-	    });
-
-	    // tile_up
-	    d3.select(row_selection).selectAll('.tile_up').data(row_split_data, function (d) {
-	      return d.col_name;
-	    }).enter().append('path').attr('class', 'tile_up').attr('d', function () {
-	      return draw_up_tile(params);
-	    }).attr('transform', function (d) {
-	      fine_position_tile(params, d);
-	    }).style('fill', function () {
-	      return params.matrix.tile_colors[0];
-	    }).style('fill-opacity', function (d) {
-	      var inst_opacity = 0;
-	      if (Math.abs(d.value_dn) > 0) {
-	        inst_opacity = params.matrix.opacity_scale(Math.abs(d.value_up));
-	      }
-	      return inst_opacity;
+	    // generate tiles in the current row
+	    var tile = d3.select(row_selection).selectAll('rect').data(row_values, function (d) {
+	        return d.col_name;
+	    }).enter().append('rect').attr('class', 'tile row_tile').attr('width', params.viz.rect_width).attr('height', params.viz.rect_height).style('fill', function (d) {
+	        // switch the color based on up/dn value
+	        var inst_fill;
+	        if (d.value_orig === 'NaN') {
+	            inst_fill = '#000000';
+	        } else {
+	            inst_fill = d.value > 0 ? params.matrix.tile_colors[0] : params.matrix.tile_colors[1];
+	        }
+	        return inst_fill;
+	    }).style('stroke-width', function (d) {
+	        // switch the color based on up/dn value
+	        if (d.highlight === 1) {
+	            return 2;
+	        }
+	        return 0;
+	    }).style('stroke', function (d) {
+	        // switch the color based on up/dn value
+	        if (d.highlight === 1) {
+	            return '#2c44ff';
+	        }
 	    }).on('mouseover', function () {
-	      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-	        args[_key2] = arguments[_key2];
-	      }
-
-	      mouseover_tile(params, this, tip, args);
+	        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	            args[_key] = arguments[_key];
+	        }
+	        mouseover_tile(params, this, tip, args);
 	    }).on('mouseout', function () {
-	      mouseout_tile(params, this, tip);
-	    });
-
-	    // tile_dn
-	    d3.select(row_selection).selectAll('.tile_dn').data(row_split_data, function (d) {
-	      return d.col_name;
-	    }).enter().append('path').attr('class', 'tile_dn').attr('d', function () {
-	      return draw_dn_tile(params);
-	    }).attr('transform', function (d) {
-	      fine_position_tile(params, d);
-	    }).style('fill', function () {
-	      return params.matrix.tile_colors[1];
+	        mouseout_tile(params, this, tip);
 	    }).style('fill-opacity', function (d) {
-	      var inst_opacity = 0;
-	      if (Math.abs(d.value_up) > 0) {
-	        inst_opacity = params.matrix.opacity_scale(Math.abs(d.value_dn));
-	      }
-	      return inst_opacity;
-	    }).on('mouseover', function () {
-	      for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-	        args[_key3] = arguments[_key3];
-	      }
-
-	      mouseover_tile(params, this, tip, args);
-	    }).on('mouseout', function () {
-	      mouseout_tile(params, this, tip);
+	        // calculate output opacity using the opacity scale
+	        var inst_opacity;
+	        if (d.value_orig === 'NaN') {
+	            // console.log('found NaN while making tiles');
+	            inst_opacity = 0.175;
+	        } else {
+	            inst_opacity = params.matrix.opacity_scale(Math.abs(d.value));
+	        }
+	        return inst_opacity;
+	    }).attr('transform', function (d) {
+	        return fine_position_tile(params, d);
 	    });
 
-	    // remove rect when tile is split
-	    tile.each(function (d) {
-	      if (Math.abs(d.value_up) > 0 && Math.abs(d.value_dn) > 0) {
-	        d3.select(this).remove();
-	      }
-	    });
-	  }
+	    // // tile circles
+	    // /////////////////////////////
+	    // var tile = d3.select(row_selection)
+	    //   .selectAll('circle')
+	    //   .data(row_values, function(d){ return d.col_name; })
+	    //   .enter()
+	    //   .append('circle')
+	    //   .attr('cx', params.viz.rect_height/4)
+	    //   .attr('cy', params.viz.rect_height/4)
+	    //   .attr('r', params.viz.rect_height/4)
+	    //   .attr('class', 'tile_circle')
+	    //   // .attr('width', params.viz.rect_width/2)
+	    //   // .attr('height', params.viz.rect_height/2)
+	    //   // // switch the color based on up/dn value
+	    //   // .style('fill', function(d) {
+	    //   //   // return d.value > 0 ? params.matrix.tile_colors[0] : params.matrix.tile_colors[1];
+	    //   //   return 'black';
+	    //   // })
+	    //   // .on('mouseover', function(...args) {
+	    //   //     mouseover_tile(params, this, tip, args);
+	    //   // })
+	    //   // .on('mouseout', function() {
+	    //   //   mouseout_tile(params, this, tip);
+	    //   // })
+	    //   .style('fill-opacity', function(d) {
+	    //     // calculate output opacity using the opacity scale
+	    //     var output_opacity = params.matrix.opacity_scale(Math.abs(d.value));
+	    //     if (output_opacity < 0.3){
+	    //       output_opacity = 0;
+	    //     } else if (output_opacity < 0.6){
+	    //       output_opacity = 0.35;
+	    //     } else {
+	    //       output_opacity = 1;
+	    //     }
+	    //     return output_opacity;
+	    //     // return 0.1;
+	    //   })
+	    //   .attr('transform', function(d) {
+	    //     return fine_position_tile(params, d);
+	    //   });
 
-	  // append title to group
-	  if (params.matrix.tile_title) {
-	    tile.append('title').text(function (d) {
-	      var inst_string = 'value: ' + d.value;
-	      return inst_string;
-	    });
-	  }
+
+	    if (params.matrix.tile_type == 'updn') {
+
+	        // value split
+	        var row_split_data = _.filter(inp_row_data, function (num) {
+	            return num.value_up != 0 || num.value_dn != 0;
+	        });
+
+	        // tile_up
+	        d3.select(row_selection).selectAll('.tile_up').data(row_split_data, function (d) {
+	            return d.col_name;
+	        }).enter().append('path').attr('class', 'tile_up').attr('d', function () {
+	            return draw_up_tile(params);
+	        }).attr('transform', function (d) {
+	            fine_position_tile(params, d);
+	        }).style('fill', function () {
+	            return params.matrix.tile_colors[0];
+	        }).style('fill-opacity', function (d) {
+	            var inst_opacity = 0;
+	            if (Math.abs(d.value_dn) > 0) {
+	                inst_opacity = params.matrix.opacity_scale(Math.abs(d.value_up));
+	            }
+	            return inst_opacity;
+	        }).on('mouseover', function () {
+	            for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+	                args[_key2] = arguments[_key2];
+	            }
+
+	            mouseover_tile(params, this, tip, args);
+	        }).on('mouseout', function () {
+	            mouseout_tile(params, this, tip);
+	        });
+
+	        // tile_dn
+	        d3.select(row_selection).selectAll('.tile_dn').data(row_split_data, function (d) {
+	            return d.col_name;
+	        }).enter().append('path').attr('class', 'tile_dn').attr('d', function () {
+	            return draw_dn_tile(params);
+	        }).attr('transform', function (d) {
+	            fine_position_tile(params, d);
+	        }).style('fill', function () {
+	            return params.matrix.tile_colors[1];
+	        }).style('fill-opacity', function (d) {
+	            var inst_opacity = 0;
+	            if (Math.abs(d.value_up) > 0) {
+	                inst_opacity = params.matrix.opacity_scale(Math.abs(d.value_dn));
+	            }
+	            return inst_opacity;
+	        }).on('mouseover', function () {
+	            for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+	                args[_key3] = arguments[_key3];
+	            }
+
+	            mouseover_tile(params, this, tip, args);
+	        }).on('mouseout', function () {
+	            mouseout_tile(params, this, tip);
+	        });
+
+	        // remove rect when tile is split
+	        tile.each(function (d) {
+	            if (Math.abs(d.value_up) > 0 && Math.abs(d.value_dn) > 0) {
+	                d3.select(this).remove();
+	            }
+	        });
+	    }
+
+	    // append title to group
+	    if (params.matrix.tile_title) {
+	        tile.append('title').text(function (d) {
+	            var inst_string = 'value: ' + d.value;
+	            return inst_string;
+	        });
+	    }
 		};
 
 /***/ },
@@ -3383,7 +3394,7 @@ module.exports =
 	var make_dendro_triangles = __webpack_require__(55);
 
 	module.exports = function toggle_dendro_view(cgm, inst_rc) {
-	  var wait_time = arguments.length <= 2 || arguments[2] === undefined ? 1500 : arguments[2];
+	  var wait_time = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1500;
 
 
 	  var params = cgm.params;
@@ -3438,7 +3449,7 @@ module.exports =
 	var make_dendro_crop_buttons = __webpack_require__(62);
 
 	module.exports = function make_dendro_triangles(cgm, inst_rc) {
-	  var is_change_group = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var is_change_group = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var params = cgm.params;
@@ -5205,10 +5216,10 @@ module.exports =
 	  exp_button.attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('font-family', 'FontAwesome').attr('font-size', '30px').text(function () {
 	    if (params.viz.is_expand === false) {
 	      // expand button
-	      return '';
+	      return '\uF0B2';
 	    } else {
 	      // menu button
-	      return '';
+	      return '\uF0C9';
 	    }
 	  }).attr('y', '25px').attr('x', '25px').style('cursor', 'pointer').style('opacity', expand_opacity).on('mouseover', function () {
 	    d3.select(this).style('opacity', 0.75);
@@ -5221,7 +5232,7 @@ module.exports =
 
 	      d3.select(this).text(function () {
 	        // menu button
-	        return '';
+	        return '\uF0C9';
 	      });
 	      params.viz.is_expand = true;
 
@@ -5234,7 +5245,7 @@ module.exports =
 
 	      d3.select(this).text(function () {
 	        // expand button
-	        return '';
+	        return '\uF0B2';
 	      });
 
 	      params.viz.is_expand = false;
@@ -6381,7 +6392,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function resize_dendro(params, svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  // resize dendrogram
@@ -6491,7 +6502,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function resize_super_labels(params, ini_svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var delays = {};
@@ -6535,7 +6546,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function resize_spillover(viz, ini_svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var delays = {};
@@ -6687,7 +6698,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function resize_row_labels(params, ini_svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var delays = {};
@@ -6808,7 +6819,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function resize_row_viz(params, ini_svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var delays = {};
@@ -6852,7 +6863,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function (params, ini_svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var delays = {};
@@ -6927,7 +6938,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function resize_col_triangle(params, ini_svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  // resize column triangle
@@ -6975,7 +6986,7 @@ module.exports =
 	var utils = __webpack_require__(2);
 
 	module.exports = function resize_col_hlight(params, svg_group) {
-	  var delay_info = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+	  var delay_info = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
 
 	  var delays = {};
@@ -7413,7 +7424,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function ini_cat_opacity(viz, inst_rc, cat_rect, inst_cat) {
-	  var updating = arguments.length <= 4 || arguments[4] === undefined ? false : arguments[4];
+	  var updating = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
 
 
 	  // debugger;
@@ -7597,7 +7608,7 @@ module.exports =
 	var get_cat_names = __webpack_require__(114);
 
 	module.exports = function make_row_cat(cgm) {
-	  var updating = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	  var updating = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
 
 	  var params = cgm.params;
@@ -8344,7 +8355,7 @@ module.exports =
 	'use strict';
 
 	module.exports = function highlight_sidebar_element(params, highlight_class) {
-	  var duration = arguments.length <= 2 || arguments[2] === undefined ? 4000 : arguments[2];
+	  var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 4000;
 
 
 	  if (highlight_class.indexOf('slider') < 0) {
@@ -10282,7 +10293,7 @@ module.exports =
 	var update_viz_with_network = __webpack_require__(136);
 
 	module.exports = function filter_viz_using_names(names) {
-	  var external_cgm = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	  var external_cgm = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
 
 	  // names is an object with row and column names that will be used to filter
@@ -11141,7 +11152,7 @@ module.exports =
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	/*
 	    D3.js Slider
@@ -11549,7 +11560,7 @@ module.exports =
 
 	/* WEBPACK VAR INJECTION */(function(module) {"use strict";
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	/**
 	 * Simple, lightweight, usable local autocomplete library for modern browsers
@@ -12001,7 +12012,7 @@ module.exports =
 			module.webpackPolyfill = 1;
 		}
 		return module;
-		};
+	};
 
 /***/ },
 /* 180 */
